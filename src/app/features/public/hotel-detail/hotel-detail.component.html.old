@@ -1,0 +1,494 @@
+<div class="min-h-screen bg-white">
+  <!-- Loading -->
+  <div *ngIf="loading" class="flex items-center justify-center min-h-screen">
+    <div class="text-center">
+      <div class="inline-block w-16 h-16 border border-gray-200 border-t-black rounded-full animate-spin"></div>
+      <p class="mt-6 text-sm text-gray-400 font-light uppercase tracking-widest">Cargando...</p>
+    </div>
+  </div>
+
+  <!-- Detalle del hotel -->
+  <div *ngIf="!loading && hotel" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <!-- Botón volver -->
+    <button
+      (click)="goBack()"
+      class="mb-12 inline-flex items-center text-gray-400 hover:text-black font-light text-sm uppercase tracking-widest transition-colors"
+    >
+      <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"></path>
+      </svg>
+      Volver
+    </button>
+
+    <!-- Imagen principal -->
+    <div class="mb-16">
+      <div class="h-[600px] bg-gray-100 flex items-center justify-center overflow-hidden">
+        <img *ngIf="hotel.imagen" [src]="hotel.imagen" [alt]="hotel.nombre" class="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-500">
+        <svg *ngIf="!hotel.imagen" class="h-24 w-24 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+        </svg>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-16">
+      <!-- Información principal -->
+      <div class="lg:col-span-2 space-y-16">
+        <!-- Header -->
+        <div class="pb-12 border-b border-gray-200">
+          <h1 class="text-5xl md:text-6xl font-extralight text-black mb-6 tracking-tight">
+            {{ hotel.nombre }}
+          </h1>
+          <div class="flex items-baseline gap-6 mb-8 text-gray-400 font-light">
+            <span class="text-sm uppercase tracking-widest">{{ hotel.estrellas }} estrellas</span>
+            <span *ngIf="hotel.totalReviews > 0" class="text-sm">
+              {{ hotel.puntuacionPromedio | number:'1.1-1' }} ({{ hotel.totalReviews }})
+            </span>
+          </div>
+          <div class="text-gray-500 font-light">
+            {{ hotel.direccion.calle }}, {{ hotel.direccion.ciudad }}, {{ hotel.direccion.estadoProvincia }}, {{ hotel.direccion.pais }}
+          </div>
+        </div>
+
+        <!-- Descripción -->
+        <div class="pb-12 border-b border-gray-200">
+          <h2 class="text-2xl font-light text-black mb-6 tracking-tight">Acerca de</h2>
+          <p class="text-gray-600 font-light leading-relaxed text-lg">{{ hotel.descripcion }}</p>
+        </div>
+
+        <!-- Información de contacto -->
+        <div class="pb-12 border-b border-gray-200">
+          <h2 class="text-2xl font-light text-black mb-6 tracking-tight">Contacto</h2>
+          <div class="space-y-4">
+            <div class="text-gray-600 font-light">
+              <span class="text-gray-400 text-sm uppercase tracking-widest mr-4">Tel</span>
+              {{ hotel.telefono }}
+            </div>
+            <div class="text-gray-600 font-light">
+              <span class="text-gray-400 text-sm uppercase tracking-widest mr-4">Email</span>
+              {{ hotel.emailContacto }}
+            </div>
+          </div>
+        </div>
+
+        <!-- Propietario -->
+        <div class="bg-white rounded-xl shadow-md p-6">
+          <h2 class="text-xl font-semibold text-gray-900 mb-4">Propietario</h2>
+          <div class="flex items-center">
+            <div class="h-12 w-12 bg-primary-100 rounded-full flex items-center justify-center mr-4">
+              <span class="text-primary-600 font-semibold text-lg">{{ hotel.propietario.nombre.charAt(0) }}</span>
+            </div>
+            <div>
+              <p class="font-semibold text-gray-900">{{ hotel.propietario.nombre }}</p>
+              <p class="text-gray-600 text-sm">{{ hotel.propietario.email }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sidebar - Búsqueda de disponibilidad -->
+      <div class="lg:col-span-1">
+        <div class="bg-white border border-gray-200 p-10 sticky top-28">
+          <h3 class="text-xl font-light text-black mb-8 tracking-tight">Disponibilidad</h3>
+          
+          <div class="space-y-8">
+            <div>
+              <label class="block text-xs font-light text-gray-400 mb-3 uppercase tracking-widest">
+                Entrada
+              </label>
+              <input
+                type="date"
+                [(ngModel)]="searchDates.checkin"
+                class="input-field w-full"
+                [min]="minDate"
+                [max]="maxDate"
+              />
+            </div>
+
+            <div>
+              <label class="block text-xs font-light text-gray-400 mb-3 uppercase tracking-widest">
+                Salida
+              </label>
+              <input
+                type="date"
+                [(ngModel)]="searchDates.checkout"
+                class="input-field w-full"
+                [min]="searchDates.checkin"
+                [max]="maxDate"
+              />
+            </div>
+
+            <div>
+              <label class="block text-xs font-light text-gray-400 mb-3 uppercase tracking-widest">
+                Huéspedes
+              </label>
+              <select
+                [(ngModel)]="searchDates.guests"
+                class="input-field w-full"
+              >
+                <option [value]="1">1</option>
+                <option [value]="2">2</option>
+                <option [value]="3">3</option>
+                <option [value]="4">4</option>
+                <option [value]="5">5</option>
+                <option [value]="6">6+</option>
+              </select>
+            </div>
+
+            <button
+              (click)="searchAvailability()"
+              [disabled]="loadingRooms"
+              class="btn-primary w-full disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <span *ngIf="!loadingRooms">Buscar</span>
+              <span *ngIf="loadingRooms">Buscando...</span>
+            </button>
+          </div>
+
+          <div class="mt-10 pt-10 border-t border-gray-200">
+            <div class="flex items-baseline justify-between">
+              <span class="text-gray-400 text-xs font-light uppercase tracking-widest">Desde</span>
+              <span class="text-3xl font-light text-black">S/ {{ hotel.precioMinimo | number:'1.0-0' }}</span>
+            </div>
+            <div class="text-right mt-2 text-gray-400 text-xs font-light uppercase tracking-widest">por noche</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sección de habitaciones -->
+    <div class="mt-12">
+      <h2 class="text-2xl font-bold text-gray-900 mb-6">Habitaciones disponibles</h2>
+
+      <!-- Loading habitaciones -->
+      <div *ngIf="loadingRooms" class="text-center py-12">
+        <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+        <p class="mt-2 text-gray-600">Cargando habitaciones...</p>
+      </div>
+
+      <!-- Lista de habitaciones -->
+      <div *ngIf="!loadingRooms && availableRooms.length > 0" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div
+          *ngFor="let room of availableRooms"
+          class="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow"
+        >
+          <div class="h-48 bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center">
+            <svg class="h-20 w-20 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+            </svg>
+          </div>
+
+          <div class="p-6">
+            <div class="flex items-start justify-between mb-3">
+              <div>
+                <h3 class="text-lg font-semibold text-gray-900">{{ getRoomType(room).nombre }}</h3>
+                <p class="text-gray-600 text-sm">Habitación {{ room.numero }}</p>
+              </div>
+              <span
+                class="px-3 py-1 rounded-full text-xs font-semibold"
+                [class.bg-green-100]="room.estado === 'disponible'"
+                [class.text-green-800]="room.estado === 'disponible'"
+                [class.bg-yellow-100]="room.estado === 'mantenimiento'"
+                [class.text-yellow-800]="room.estado === 'mantenimiento'"
+              >
+                {{ room.estado }}
+              </span>
+            </div>
+
+            <p class="text-gray-600 text-sm mb-4">{{ getRoomType(room).descripcion }}</p>
+
+            <div class="space-y-2 mb-4">
+              <div class="flex items-center text-sm text-gray-700">
+                <svg class="h-4 w-4 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                </svg>
+                <span>Capacidad: {{ room.capacidad }} personas</span>
+              </div>
+              <div class="flex items-center text-sm text-gray-700">
+                <svg class="h-4 w-4 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                </svg>
+                <span>{{ room.numCamas }} cama(s)</span>
+              </div>
+              <div *ngIf="room.metrosCuadrados" class="flex items-center text-sm text-gray-700">
+                <svg class="h-4 w-4 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v14a1 1 0 01-1 1H5a1 1 0 01-1-1V5z"></path>
+                </svg>
+                <span>{{ room.metrosCuadrados }} m²</span>
+              </div>
+            </div>
+
+            <div class="flex items-center justify-between pt-4 border-t border-gray-200">
+              <div>
+                <p class="text-2xl font-bold text-primary-600">${{ room.precioBase | number:'1.0-0' }}</p>
+                <p class="text-gray-500 text-sm">por noche</p>
+              </div>
+              <button
+                (click)="openReservationModal(room)"
+                [disabled]="room.estado !== 'disponible'"
+                class="btn-primary"
+              >
+                Reservar
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sin resultados -->
+      <div *ngIf="!loadingRooms && availableRooms.length === 0 && searchPerformed" class="text-center py-12">
+        <svg class="h-16 w-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
+        <p class="text-gray-600 text-lg">No hay habitaciones disponibles para las fechas seleccionadas</p>
+        <p class="text-gray-500 text-sm mt-2">Intenta con otras fechas o menos huéspedes</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de reserva -->
+  <div *ngIf="showReservationModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+      <div class="p-6 border-b border-gray-200">
+        <div class="flex items-center justify-between">
+          <h3 class="text-2xl font-bold text-gray-900">Confirmar reserva</h3>
+          <button
+            (click)="closeReservationModal()"
+            class="text-gray-400 hover:text-gray-600"
+          >
+            <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="p-6">
+        <div *ngIf="selectedRoom" class="mb-6">
+          <div class="bg-gray-50 rounded-lg p-4 mb-4">
+            <h4 class="font-semibold text-gray-900 mb-2">{{ getRoomType(selectedRoom).nombre }}</h4>
+            <p class="text-gray-600 text-sm mb-2">Habitación {{ selectedRoom.numero }}</p>
+            <p class="text-gray-700">{{ getRoomType(selectedRoom).descripcion }}</p>
+          </div>
+
+          <!-- Selector de tipo de reserva -->
+          <div class="mb-6">
+            <label class="block text-lg font-bold text-gray-900 mb-4">Tipo de reserva</label>
+            <div class="grid grid-cols-2 gap-4">
+              <button
+                type="button"
+                (click)="reservationType = 'noche'; onReservationTypeChange()"
+                [class.bg-gradient-to-r]="reservationType === 'noche'"
+                [class.from-blue-600]="reservationType === 'noche'"
+                [class.to-purple-600]="reservationType === 'noche'"
+                [class.text-white]="reservationType === 'noche'"
+                [class.shadow-lg]="reservationType === 'noche'"
+                [class.bg-gray-100]="reservationType !== 'noche'"
+                [class.text-gray-700]="reservationType !== 'noche'"
+                class="p-6 rounded-xl font-bold text-lg transition-all duration-300 border-2 hover:scale-105"
+                [class.border-blue-600]="reservationType === 'noche'"
+                [class.border-gray-300]="reservationType !== 'noche'"
+              >
+                <div class="text-3xl mb-2">🌙</div>
+                Por noche
+              </button>
+              <button
+                type="button"
+                (click)="reservationType = 'horas'; onReservationTypeChange()"
+                [class.bg-gradient-to-r]="reservationType === 'horas'"
+                [class.from-orange-500]="reservationType === 'horas'"
+                [class.to-pink-600]="reservationType === 'horas'"
+                [class.text-white]="reservationType === 'horas'"
+                [class.shadow-lg]="reservationType === 'horas'"
+                [class.bg-gray-100]="reservationType !== 'horas'"
+                [class.text-gray-700]="reservationType !== 'horas'"
+                class="p-6 rounded-xl font-bold text-lg transition-all duration-300 border-2 hover:scale-105"
+                [class.border-orange-500]="reservationType === 'horas'"
+                [class.border-gray-300]="reservationType !== 'horas'"
+              >
+                <div class="text-3xl mb-2">⏰</div>
+                Por horas
+              </button>
+            </div>
+          </div>
+
+          <div class="space-y-6">
+            <!-- Reserva por noche -->
+            <div *ngIf="reservationType === 'noche'">
+              <div class="grid grid-cols-2 gap-6">
+                <div>
+                  <label class="block text-sm font-bold text-gray-700 mb-2 flex items-center">
+                    <span class="bg-blue-100 text-blue-600 p-1.5 rounded-lg mr-2 text-xs">📅</span>
+                    Fecha de entrada
+                  </label>
+                  <input
+                    type="date"
+                    [(ngModel)]="reservationData.fechaCheckin"
+                    class="w-full border-2 border-gray-300 rounded-xl px-4 py-3 focus:ring-4 focus:ring-blue-200 focus:border-blue-500 transition-all"
+                    [min]="minDate"
+                    [max]="maxDate"
+                    required
+                  />
+                </div>
+                <div>
+                  <label class="block text-sm font-bold text-gray-700 mb-2 flex items-center">
+                    <span class="bg-purple-100 text-purple-600 p-1.5 rounded-lg mr-2 text-xs">📅</span>
+                    Fecha de salida
+                  </label>
+                  <input
+                    type="date"
+                    [(ngModel)]="reservationData.fechaCheckout"
+                    class="w-full border-2 border-gray-300 rounded-xl px-4 py-3 focus:ring-4 focus:ring-purple-200 focus:border-purple-500 transition-all"
+                    [min]="reservationData.fechaCheckin || minDate"
+                    [max]="maxDate"
+                    required
+                  />
+                </div>
+              </div>
+              <p *ngIf="calculateNights() > 0" class="mt-3 text-center text-lg font-semibold text-blue-600">
+                {{ calculateNights() }} {{ calculateNights() === 1 ? 'noche' : 'noches' }}
+              </p>
+            </div>
+
+            <!-- Reserva por horas -->
+            <div *ngIf="reservationType === 'horas'">
+              <div class="bg-orange-50 border-2 border-orange-200 rounded-xl p-6 mb-6">
+                <p class="text-orange-800 font-semibold mb-2">ℹ️ Información importante:</p>
+                <ul class="text-sm text-orange-700 space-y-1">
+                  <li>• Las reservas por horas son solo para el día de hoy</li>
+                  <li>• Duración mínima: 3 horas</li>
+                  <li>• Duración máxima: 12 horas</li>
+                  <li>• Precio especial: 40% del precio base por hora</li>
+                </ul>
+              </div>
+
+              <div class="grid grid-cols-2 gap-6">
+                <div>
+                  <label class="block text-sm font-bold text-gray-700 mb-2 flex items-center">
+                    <span class="bg-green-100 text-green-600 p-1.5 rounded-lg mr-2 text-xs">🕐</span>
+                    Hora de entrada
+                  </label>
+                  <select
+                    [(ngModel)]="reservationData.horaCheckin"
+                    (change)="onHoraCheckinChange()"
+                    class="w-full border-2 border-gray-300 rounded-xl px-4 py-3 focus:ring-4 focus:ring-green-200 focus:border-green-500 transition-all cursor-pointer"
+                  >
+                    <option *ngFor="let hour of availableHours" [value]="hour">{{ hour }}</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-sm font-bold text-gray-700 mb-2 flex items-center">
+                    <span class="bg-red-100 text-red-600 p-1.5 rounded-lg mr-2 text-xs">🕐</span>
+                    Hora de salida
+                  </label>
+                  <select
+                    [(ngModel)]="reservationData.horaCheckout"
+                    class="w-full border-2 border-gray-300 rounded-xl px-4 py-3 focus:ring-4 focus:ring-red-200 focus:border-red-500 transition-all cursor-pointer"
+                    [disabled]="!reservationData.horaCheckin"
+                  >
+                    <option *ngFor="let hour of availableHours" [value]="hour" [disabled]="hour <= minHoraCheckout">
+                      {{ hour }}
+                    </option>
+                  </select>
+                </div>
+              </div>
+              <div *ngIf="getHoursDuration() > 0" class="mt-4">
+                <p class="text-center text-lg font-semibold"
+                   [class.text-green-600]="getHoursDuration() >= 3 && getHoursDuration() <= 12"
+                   [class.text-red-600]="getHoursDuration() < 3 || getHoursDuration() > 12">
+                  Duración: {{ getHoursDuration() }} horas
+                  <span *ngIf="getHoursDuration() < 3" class="block text-sm">⚠️ Mínimo 3 horas requeridas</span>
+                  <span *ngIf="getHoursDuration() > 12" class="block text-sm">⚠️ Máximo 12 horas permitidas</span>
+                </p>
+              </div>
+            </div>
+
+            <!-- Número de huéspedes -->
+            <div>
+              <label class="block text-sm font-bold text-gray-700 mb-2 flex items-center">
+                <span class="bg-green-100 text-green-600 p-1.5 rounded-lg mr-2 text-xs">👥</span>
+                Número de huéspedes
+              </label>
+              <select
+                [(ngModel)]="reservationData.cantidadHuespedes"
+                class="w-full border-2 border-gray-300 rounded-xl px-4 py-3 focus:ring-4 focus:ring-green-200 focus:border-green-500 transition-all cursor-pointer"
+              >
+                <option [value]="i" *ngFor="let i of [1,2,3,4,5,6]">
+                  {{ i }} {{ i === 1 ? 'huésped' : 'huéspedes' }}
+                </option>
+              </select>
+            </div>
+
+            <!-- Notas especiales -->
+            <div>
+              <label class="block text-sm font-bold text-gray-700 mb-2 flex items-center">
+                <span class="bg-yellow-100 text-yellow-600 p-1.5 rounded-lg mr-2 text-xs">📝</span>
+                Notas especiales (opcional)
+              </label>
+              <textarea
+                [(ngModel)]="reservationData.notasEspeciales"
+                rows="3"
+                class="w-full border-2 border-gray-300 rounded-xl px-4 py-3 focus:ring-4 focus:ring-yellow-200 focus:border-yellow-500 transition-all"
+                placeholder="Ej: Llegada tarde, cuna para bebé, piso alto, etc."
+              ></textarea>
+            </div>
+
+            <!-- Resumen de precios -->
+            <div class="bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl p-6 border-2 border-blue-200">
+              <h4 class="font-bold text-lg text-gray-900 mb-4">Resumen de costos</h4>
+              <div class="space-y-3">
+                <div *ngIf="reservationType === 'noche'" class="flex justify-between text-gray-700">
+                  <span>${{ selectedRoom.precioBase | number:'1.0-0' }} × {{ calculateNights() }} {{ calculateNights() === 1 ? 'noche' : 'noches' }}</span>
+                  <span class="font-semibold">${{ selectedRoom.precioBase * calculateNights() | number:'1.0-0' }}</span>
+                </div>
+                <div *ngIf="reservationType === 'horas'" class="flex justify-between text-gray-700">
+                  <span>${{ selectedRoom.precioBase * 0.40 | number:'1.0-0' }} × {{ getHoursDuration() }} horas</span>
+                  <span class="font-semibold">${{ (selectedRoom.precioBase * 0.40 * getHoursDuration()) | number:'1.0-0' }}</span>
+                </div>
+                <div class="flex justify-between text-gray-600 text-sm">
+                  <span>Impuestos (18%)</span>
+                  <span>Incluido</span>
+                </div>
+                <div class="flex justify-between text-2xl font-bold text-gray-900 pt-3 border-t-2 border-gray-300">
+                  <span>Total</span>
+                  <span class="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                    ${{ calculateTotal() | number:'1.0-0' }}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer del modal -->
+      <div class="p-8 border-t-2 border-gray-200 bg-gray-50 flex justify-end space-x-4">
+        <button
+          (click)="closeReservationModal()"
+          [disabled]="submittingReservation"
+          class="px-8 py-4 border-2 border-gray-300 rounded-xl text-gray-700 hover:bg-gray-100 font-bold transition-all disabled:opacity-50"
+        >
+          Cancelar
+        </button>
+        <button
+          (click)="submitReservation()"
+          [disabled]="submittingReservation || !reservationData.fechaCheckin || !reservationData.fechaCheckout"
+          class="px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+        >
+          <span *ngIf="!submittingReservation" class="flex items-center">
+            <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+            </svg>
+            Confirmar reserva
+          </span>
+          <span *ngIf="submittingReservation" class="flex items-center">
+            <svg class="animate-spin h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            Procesando...
+          </span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,254 @@
+<div class="min-h-screen bg-gray-50 py-8">
+  <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+    
+    <!-- Header -->
+    <div class="mb-6">
+      <button (click)="goBack()" class="flex items-center text-gray-600 hover:text-gray-900 mb-4">
+        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+        </svg>
+        Volver a mis reservas
+      </button>
+      <h1 class="text-3xl font-bold text-gray-900">Completar Pago</h1>
+      <p class="mt-2 text-gray-600">Ingresa los datos de tu tarjeta para confirmar la reserva</p>
+    </div>
+
+    <!-- Loading -->
+    <div *ngIf="loading" class="bg-white rounded-xl shadow-md p-12 text-center">
+      <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-black"></div>
+      <p class="mt-4 text-gray-600">Cargando información de la reserva...</p>
+    </div>
+
+    <!-- Contenido principal -->
+    <div *ngIf="!loading && reservation" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      
+      <!-- Formulario de pago -->
+      <div class="lg:col-span-2">
+        <div class="bg-white rounded-xl shadow-md border-2 border-black p-6">
+          <h2 class="text-xl font-bold mb-6">💳 Información de Pago</h2>
+
+          <form (ngSubmit)="processPayment()" #paymentForm="ngForm">
+            
+            <!-- Número de tarjeta -->
+            <div class="mb-6">
+              <label class="block text-sm font-semibold mb-2">Número de Tarjeta</label>
+              <input
+                type="text"
+                [(ngModel)]="paymentData.cardNumber"
+                name="cardNumber"
+                (input)="formatCardNumber($event)"
+                maxlength="19"
+                placeholder="1234 5678 9012 3456"
+                pattern="[0-9\s]*"
+                inputmode="numeric"
+                class="w-full px-4 py-3 border-2 border-black rounded-lg focus:ring-2 focus:ring-black focus:border-black"
+                required
+                [disabled]="processing"
+              />
+              <p class="text-xs text-gray-500 mt-1">Los números se formatearán automáticamente</p>
+            </div>
+
+            <!-- Email -->
+            <div class="mb-6">
+              <label class="block text-sm font-semibold mb-2">Email</label>
+              <input
+                type="email"
+                [(ngModel)]="paymentData.email"
+                name="email"
+                placeholder="tu@email.com"
+                class="w-full px-4 py-3 border-2 border-black rounded-lg focus:ring-2 focus:ring-black focus:border-black"
+                required
+                [disabled]="processing"
+              />
+            </div>
+
+            <!-- Fecha de vencimiento y CVV -->
+            <div class="grid grid-cols-2 gap-4 mb-6">
+              <div>
+                <label class="block text-sm font-semibold mb-2">Mes</label>
+                <select
+                  [(ngModel)]="paymentData.expirationMonth"
+                  name="expMonth"
+                  class="w-full px-4 py-3 border-2 border-black rounded-lg focus:ring-2 focus:ring-black focus:border-black"
+                  required
+                  [disabled]="processing"
+                >
+                  <option value="">MM</option>
+                  <option value="01">01</option>
+                  <option value="02">02</option>
+                  <option value="03">03</option>
+                  <option value="04">04</option>
+                  <option value="05">05</option>
+                  <option value="06">06</option>
+                  <option value="07">07</option>
+                  <option value="08">08</option>
+                  <option value="09">09</option>
+                  <option value="10">10</option>
+                  <option value="11">11</option>
+                  <option value="12">12</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-sm font-semibold mb-2">Año</label>
+                <select
+                  [(ngModel)]="paymentData.expirationYear"
+                  name="expYear"
+                  class="w-full px-4 py-3 border-2 border-black rounded-lg focus:ring-2 focus:ring-black focus:border-black"
+                  required
+                  [disabled]="processing"
+                >
+                  <option value="">AAAA</option>
+                  <option value="2025">2025</option>
+                  <option value="2026">2026</option>
+                  <option value="2027">2027</option>
+                  <option value="2028">2028</option>
+                  <option value="2029">2029</option>
+                  <option value="2030">2030</option>
+                  <option value="2031">2031</option>
+                  <option value="2032">2032</option>
+                  <option value="2033">2033</option>
+                  <option value="2034">2034</option>
+                  <option value="2035">2035</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- CVV -->
+            <div class="mb-6">
+              <label class="block text-sm font-semibold mb-2">CVV</label>
+              <input
+                type="text"
+                [(ngModel)]="paymentData.cvv"
+                name="cvv"
+                (input)="onCvvInput($event)"
+                maxlength="4"
+                placeholder="123"
+                pattern="[0-9]*"
+                inputmode="numeric"
+                class="w-full px-4 py-3 border-2 border-black rounded-lg focus:ring-2 focus:ring-black focus:border-black"
+                required
+                [disabled]="processing"
+              />
+              <p class="text-xs text-gray-500 mt-1">Código de seguridad de 3 o 4 dígitos al reverso de tu tarjeta</p>
+            </div>
+
+            <!-- Aviso de seguridad -->
+            <div class="bg-gray-50 border-2 border-black rounded-lg p-4 mb-6">
+              <div class="flex items-start">
+                <svg class="w-5 h-5 text-gray-600 mr-3 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"></path>
+                </svg>
+                <div class="flex-1">
+                  <p class="text-sm font-semibold mb-1">🔒 Pago 100% seguro</p>
+                  <p class="text-xs text-gray-600">Procesado por Culqi. Tus datos están protegidos con encriptación SSL.</p>
+                  <p *ngIf="!culqiLoaded" class="text-xs text-yellow-600 mt-1 flex items-center">
+                    <svg class="animate-spin h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24">
+                      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Cargando sistema de pagos...
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Botón de pago -->
+            <button
+              type="submit"
+              [disabled]="processing || !paymentForm.valid || !culqiLoaded"
+              class="w-full bg-black text-white py-4 rounded-lg font-bold text-lg hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed border-2 border-black"
+            >
+              <span *ngIf="!processing && culqiLoaded">💳 Pagar S/ {{ getTotalAmount() | number:'1.2-2' }}</span>
+              <span *ngIf="!processing && !culqiLoaded" class="flex items-center justify-center">
+                <svg class="animate-spin h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Cargando sistema de pagos...
+              </span>
+              <span *ngIf="processing" class="flex items-center justify-center">
+                <svg class="animate-spin h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Procesando pago...
+              </span>
+            </button>
+
+            <!-- Mensaje de ayuda si Culqi no carga -->
+            <div *ngIf="!culqiLoaded && !loading" class="mt-4 text-center">
+              <p class="text-sm text-gray-600">
+                ¿El botón no se activa? 
+                <button (click)="loadCulqiScript()" class="text-blue-600 underline hover:text-blue-800">
+                  Haz clic aquí para reintentar
+                </button>
+              </p>
+            </div>
+
+          </form>
+        </div>
+      </div>
+
+      <!-- Resumen de reserva -->
+      <div class="lg:col-span-1">
+        <div class="bg-white rounded-xl shadow-md border-2 border-black p-6 sticky top-4">
+          <h2 class="text-xl font-bold mb-4">📋 Resumen de Reserva</h2>
+
+          <!-- Hotel -->
+          <div class="mb-4 pb-4 border-b-2 border-gray-200">
+            <p class="text-sm text-gray-600 mb-1">Hotel</p>
+            <p class="font-bold text-lg">{{ getHotelName() }}</p>
+          </div>
+
+          <!-- Habitación -->
+          <div class="mb-4 pb-4 border-b-2 border-gray-200">
+            <p class="text-sm text-gray-600 mb-1">Habitación</p>
+            <p class="font-semibold">{{ getRoomName() }}</p>
+          </div>
+
+          <!-- Fechas -->
+          <div class="mb-4 pb-4 border-b-2 border-gray-200">
+            <div class="flex justify-between mb-2">
+              <span class="text-sm text-gray-600">Check-in</span>
+              <span class="font-semibold">{{ reservation.fechaCheckin | date:'dd/MM/yyyy' }}</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-sm text-gray-600">Check-out</span>
+              <span class="font-semibold">{{ reservation.fechaCheckout | date:'dd/MM/yyyy' }}</span>
+            </div>
+          </div>
+
+          <!-- Noches y huéspedes -->
+          <div class="mb-4 pb-4 border-b-2 border-gray-200">
+            <div class="flex justify-between mb-2">
+              <span class="text-sm text-gray-600">Noches</span>
+              <span class="font-semibold">{{ calculateNights() }}</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-sm text-gray-600">Huéspedes</span>
+              <span class="font-semibold">{{ reservation.cantidadHuespedes }}</span>
+            </div>
+          </div>
+
+          <!-- Código de reserva -->
+          <div class="mb-4 pb-4 border-b-2 border-gray-200">
+            <p class="text-sm text-gray-600 mb-1">Código de reserva</p>
+            <p class="font-mono font-bold text-sm">{{ reservation.codigoReserva }}</p>
+          </div>
+
+          <!-- Total -->
+          <div class="bg-black text-white rounded-lg p-4">
+            <div class="flex justify-between items-center">
+              <span class="text-lg font-semibold">Total a pagar</span>
+              <span class="text-2xl font-bold">S/ {{ getTotalAmount() | number:'1.2-2' }}</span>
+            </div>
+            <p class="text-xs text-gray-300 mt-2">Incluye impuestos y cargos</p>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+</div>

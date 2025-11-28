@@ -1,0 +1,520 @@
+<div class="min-h-screen bg-gray-50">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Header -->
+    <div class="mb-8">
+      <button
+        (click)="goBack()"
+        class="mb-4 flex items-center text-gray-600 hover:text-primary-600 transition-colors"
+      >
+        <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+        </svg>
+        Volver al dashboard
+      </button>
+
+      <div class="flex items-center justify-between">
+        <div>
+          <h1 class="text-3xl font-bold text-gray-900">Reservas del Hotel</h1>
+          <p *ngIf="hotel" class="text-gray-600 mt-2">{{ hotel.nombre }}</p>
+        </div>
+        <div class="text-right">
+          <p class="text-sm text-gray-600">Total de reservas</p>
+          <p class="text-3xl font-bold text-primary-600">{{ totalElements }}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Estadísticas -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+      <div class="bg-white rounded-lg shadow-md p-6">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-gray-600 text-sm">Pendientes</p>
+            <p class="text-2xl font-bold text-yellow-600">{{ stats.pendientes }}</p>
+          </div>
+          <div class="text-4xl">⏳</div>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-lg shadow-md p-6">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-gray-600 text-sm">Confirmadas</p>
+            <p class="text-2xl font-bold text-blue-600">{{ stats.confirmadas }}</p>
+          </div>
+          <div class="text-4xl">✅</div>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-lg shadow-md p-6">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-gray-600 text-sm">Completadas</p>
+            <p class="text-2xl font-bold text-green-600">{{ stats.completadas }}</p>
+          </div>
+          <div class="text-4xl">🎉</div>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-lg shadow-md p-6">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-gray-600 text-sm">Canceladas</p>
+            <p class="text-2xl font-bold text-red-600">{{ stats.canceladas }}</p>
+          </div>
+          <div class="text-4xl">❌</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mensajes -->
+    <div *ngIf="message" class="mb-6 bg-green-50 border border-green-200 rounded-lg p-4">
+      <p class="text-green-800">{{ message }}</p>
+    </div>
+
+    <div *ngIf="error" class="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
+      <p class="text-red-800">{{ error }}</p>
+    </div>
+
+    <!-- Filtros -->
+    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Buscar</label>
+          <input
+            type="text"
+            [(ngModel)]="searchTerm"
+            placeholder="Código, cliente, habitación..."
+            class="w-full border border-gray-300 rounded-lg px-4 py-2"
+          />
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Estado</label>
+          <select
+            [(ngModel)]="selectedStatus"
+            class="w-full border border-gray-300 rounded-lg px-4 py-2"
+          >
+            <option value="todas">Todas</option>
+            <option value="pendiente">Pendientes</option>
+            <option value="confirmada">Confirmadas</option>
+            <option value="completada">Completadas</option>
+            <option value="cancelada">Canceladas</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Loading -->
+    <div *ngIf="loading" class="text-center py-12">
+      <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+      <p class="mt-4 text-gray-600">Cargando reservas...</p>
+    </div>
+
+    <!-- Lista de reservas -->
+    <div *ngIf="!loading && filteredReservations.length > 0" class="space-y-4">
+      <div
+        *ngFor="let reservation of filteredReservations"
+        class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow"
+      >
+        <div class="p-6">
+          <div class="flex items-start justify-between mb-4">
+            <div>
+              <div class="flex items-center space-x-3 mb-2">
+                <span class="text-2xl">{{ getStatusIcon(reservation.estado) }}</span>
+                <h3 class="text-xl font-semibold text-gray-900">
+                  Reserva #{{ reservation.codigoReserva }}
+                </h3>
+                <span
+                  class="px-3 py-1 rounded-full text-xs font-semibold"
+                  [class]="getStatusColor(reservation.estado)"
+                >
+                  {{ reservation.estado }}
+                </span>
+              </div>
+              <p class="text-gray-600">Habitación {{ reservation.habitacion.numero }} - {{ reservation.habitacion.nombreCorto }}</p>
+            </div>
+
+            <div class="text-right">
+              <p class="text-2xl font-bold text-primary-600">${{ reservation.precioTotal | number:'1.0-0' }}</p>
+              <p class="text-sm text-gray-600">{{ calculateNights(reservation) }} noche(s)</p>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 pb-4 border-b border-gray-200">
+            <div>
+              <p class="text-sm text-gray-600 mb-1">Cliente</p>
+              <p class="font-semibold text-gray-900">{{ reservation.usuario.nombre }}</p>
+              <p class="text-sm text-gray-600">{{ reservation.usuario.email }}</p>
+            </div>
+
+            <div>
+              <p class="text-sm text-gray-600 mb-1">Check-in / Check-out</p>
+              <p class="font-semibold text-gray-900">
+                {{ reservation.fechaCheckin | date:'dd/MM/yyyy' }} - {{ reservation.fechaCheckout | date:'dd/MM/yyyy' }}
+              </p>
+              <p class="text-sm text-gray-600">{{ reservation.cantidadHuespedes }} huésped(es)</p>
+            </div>
+
+            <div>
+              <p class="text-sm text-gray-600 mb-1">Fecha de reserva</p>
+              <p class="font-semibold text-gray-900">{{ reservation.creadoEn | date:'dd/MM/yyyy HH:mm' }}</p>
+            </div>
+          </div>
+
+          <!-- Acciones -->
+          <div class="flex space-x-3">
+            <button
+              *ngIf="reservation.estado === 'pendiente'"
+              (click)="confirmarReserva(reservation)"
+              class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
+            >
+              ✅ Confirmar
+            </button>
+
+            <button
+              *ngIf="reservation.estado === 'confirmada'"
+              (click)="completarReserva(reservation)"
+              class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm"
+            >
+              🎉 Marcar completada
+            </button>
+
+            <button
+              *ngIf="reservation.estado === 'pendiente' || reservation.estado === 'confirmada'"
+              (click)="openCancelModal(reservation)"
+              class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm"
+            >
+              ❌ Cancelar
+            </button>
+
+            <button
+              (click)="viewReservationDetails(reservation)"
+              class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm"
+            >
+              📋 Ver detalles
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sin reservas -->
+    <div *ngIf="!loading && filteredReservations.length === 0" class="bg-white rounded-lg shadow-md p-12 text-center">
+      <svg class="h-16 w-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+      </svg>
+      <p class="text-gray-600 text-lg">No hay reservas para mostrar</p>
+      <p class="text-gray-500 text-sm mt-2">Las reservas aparecerán aquí cuando los huéspedes reserven habitaciones</p>
+    </div>
+
+    <!-- Paginación -->
+    <div *ngIf="totalPages > 1" class="mt-8 flex items-center justify-center space-x-2">
+      <button
+        (click)="changePage(currentPage - 1)"
+        [disabled]="currentPage === 0"
+        class="px-4 py-2 border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+      >
+        Anterior
+      </button>
+
+      <div class="flex space-x-2">
+        <button
+          *ngFor="let page of [].constructor(totalPages); let i = index"
+          (click)="changePage(i)"
+          [class.bg-primary-600]="i === currentPage"
+          [class.text-white]="i === currentPage"
+          [class.border-gray-300]="i !== currentPage"
+          class="px-4 py-2 border rounded-lg hover:bg-primary-100"
+        >
+          {{ i + 1 }}
+        </button>
+      </div>
+
+      <button
+        (click)="changePage(currentPage + 1)"
+        [disabled]="currentPage === totalPages - 1"
+        class="px-4 py-2 border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+      >
+        Siguiente
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal de Detalles de Reserva -->
+<div *ngIf="showDetailsModal && selectedReservation" 
+     class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+     (click)="closeDetailsModal()">
+  <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+       (click)="$event.stopPropagation()">
+    
+    <!-- Header -->
+    <div class="bg-black text-white p-6 rounded-t-xl">
+      <div class="flex items-center justify-between">
+        <div>
+          <h2 class="text-2xl font-bold">Detalles de Reserva</h2>
+          <p class="text-gray-300 mt-1">{{ selectedReservation.codigoReserva }}</p>
+        </div>
+        <button (click)="closeDetailsModal()" class="text-white hover:text-gray-300 text-3xl">
+          ×
+        </button>
+      </div>
+    </div>
+
+    <!-- Contenido -->
+    <div class="p-6 space-y-6">
+      
+      <!-- Estado -->
+      <div class="border-2 border-black rounded-lg p-4">
+        <div class="flex items-center justify-between">
+          <span class="text-sm font-semibold text-gray-600">Estado de la Reserva</span>
+          <span [class]="getStatusColor(selectedReservation.estado)" 
+                class="px-4 py-2 rounded-full font-bold text-sm">
+            {{ getStatusIcon(selectedReservation.estado) }} {{ selectedReservation.estado | uppercase }}
+          </span>
+        </div>
+      </div>
+
+      <!-- Información del Huésped -->
+      <div class="border-2 border-black rounded-lg p-4">
+        <h3 class="font-bold text-lg mb-3 flex items-center">
+          👤 Información del Huésped
+        </h3>
+        <div class="space-y-2">
+          <div class="flex justify-between">
+            <span class="text-gray-600">Nombre:</span>
+            <span class="font-semibold">{{ selectedReservation.usuario.nombre }}</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-gray-600">Email:</span>
+            <span class="font-semibold">{{ selectedReservation.usuario.email }}</span>
+          </div>
+          <div class="flex justify-between" *ngIf="selectedReservation.usuario.telefono">
+            <span class="text-gray-600">Teléfono:</span>
+            <span class="font-semibold">{{ selectedReservation.usuario.telefono }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Detalles de la Reserva -->
+      <div class="border-2 border-black rounded-lg p-4">
+        <h3 class="font-bold text-lg mb-3 flex items-center">
+          🛏️ Detalles de la Estadía
+        </h3>
+        <div class="space-y-2">
+          <div class="flex justify-between">
+            <span class="text-gray-600">Habitación:</span>
+            <span class="font-semibold">{{ getRoomName(selectedReservation) }}</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-gray-600">Check-in:</span>
+            <span class="font-semibold">{{ selectedReservation.fechaCheckin | date:'dd/MM/yyyy' }}</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-gray-600">Check-out:</span>
+            <span class="font-semibold">{{ selectedReservation.fechaCheckout | date:'dd/MM/yyyy' }}</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-gray-600">Duración:</span>
+            <span class="font-semibold">{{ getReservationDuration(selectedReservation) }}</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-gray-600">Huéspedes:</span>
+            <span class="font-semibold">{{ selectedReservation.cantidadHuespedes }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Información Financiera -->
+      <div class="border-2 border-black rounded-lg p-4 bg-gray-50">
+        <h3 class="font-bold text-lg mb-3 flex items-center">
+          💰 Información de Pago
+        </h3>
+        <div class="space-y-2">
+          <div class="flex justify-between" *ngIf="selectedReservation.subtotal">
+            <span class="text-gray-600">Subtotal:</span>
+            <span class="font-semibold">S/ {{ selectedReservation.subtotal | number:'1.2-2' }}</span>
+          </div>
+          <div class="flex justify-between" *ngIf="selectedReservation.impuestos">
+            <span class="text-gray-600">Impuestos:</span>
+            <span class="font-semibold">S/ {{ selectedReservation.impuestos | number:'1.2-2' }}</span>
+          </div>
+          <div class="flex justify-between pt-2 border-t-2 border-black">
+            <span class="text-gray-900 font-bold">Total:</span>
+            <span class="text-xl font-bold text-black">S/ {{ (selectedReservation.total || selectedReservation.precioTotal) | number:'1.2-2' }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Notas Especiales -->
+      <div *ngIf="selectedReservation.notasEspeciales" class="border-2 border-black rounded-lg p-4">
+        <h3 class="font-bold text-lg mb-2 flex items-center">
+          📝 Notas Especiales
+        </h3>
+        <p class="text-gray-700">{{ selectedReservation.notasEspeciales }}</p>
+      </div>
+
+      <!-- Fechas del Sistema -->
+      <div class="border-t-2 border-gray-200 pt-4">
+        <div class="text-xs text-gray-500 space-y-1">
+          <div class="flex justify-between">
+            <span>Reserva creada:</span>
+            <span>{{ selectedReservation.creadoEn | date:'dd/MM/yyyy HH:mm' }}</span>
+          </div>
+          <div class="flex justify-between" *ngIf="selectedReservation.actualizadoEn">
+            <span>Última actualización:</span>
+            <span>{{ selectedReservation.actualizadoEn | date:'dd/MM/yyyy HH:mm' }}</span>
+          </div>
+          <div class="flex justify-between" *ngIf="selectedReservation.fechaCancelacion">
+            <span>Cancelada el:</span>
+            <span>{{ selectedReservation.fechaCancelacion | date:'dd/MM/yyyy HH:mm' }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Motivo de Cancelación -->
+      <div *ngIf="selectedReservation.motivoCancelacion && selectedReservation.estado === 'cancelada'" 
+           class="bg-red-50 border-2 border-red-200 rounded-lg p-4">
+        <h3 class="font-bold text-red-800 mb-2">❌ Motivo de Cancelación</h3>
+        <p class="text-red-700">{{ selectedReservation.motivoCancelacion }}</p>
+      </div>
+    </div>
+
+    <!-- Footer con Acciones -->
+    <div class="bg-gray-50 p-6 rounded-b-xl border-t-2 border-gray-200">
+      <div class="flex justify-end space-x-3">
+        <button 
+          (click)="closeDetailsModal()"
+          class="px-6 py-2 border-2 border-black rounded-lg hover:bg-gray-100 font-semibold">
+          Cerrar
+        </button>
+        
+        <button 
+          *ngIf="selectedReservation.estado === 'pendiente'"
+          (click)="confirmarReserva(selectedReservation); closeDetailsModal()"
+          class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold">
+          ✅ Confirmar Reserva
+        </button>
+        
+        <button 
+          *ngIf="selectedReservation.estado === 'confirmada'"
+          (click)="completarReserva(selectedReservation); closeDetailsModal()"
+          class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold">
+          🎉 Marcar Completada
+        </button>
+        
+        <button 
+          *ngIf="selectedReservation.estado !== 'cancelada' && selectedReservation.estado !== 'completada'"
+          (click)="closeDetailsModal(); openCancelModal(selectedReservation)"
+          class="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-semibold">
+          ❌ Cancelar Reserva
+        </button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Modal de Cancelación -->
+<div *ngIf="showCancelModal && selectedReservation" 
+     class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+     (click)="closeCancelModal()">
+  <div class="bg-white rounded-xl shadow-2xl max-w-md w-full border-2 border-black"
+       (click)="$event.stopPropagation()">
+    
+    <!-- Header -->
+    <div class="bg-red-600 text-white p-6 rounded-t-xl">
+      <div class="flex items-center justify-between">
+        <div>
+          <h2 class="text-xl font-bold">❌ Cancelar Reserva</h2>
+          <p class="text-red-100 text-sm mt-1">{{ selectedReservation.codigoReserva }}</p>
+        </div>
+        <button (click)="closeCancelModal()" class="text-white hover:text-red-200 text-3xl leading-none">
+          ×
+        </button>
+      </div>
+    </div>
+
+    <!-- Contenido -->
+    <div class="p-6">
+      
+      <!-- Info de la reserva -->
+      <div class="bg-gray-50 border-2 border-gray-200 rounded-lg p-4 mb-4">
+        <div class="space-y-2 text-sm">
+          <div class="flex justify-between">
+            <span class="text-gray-600">Huésped:</span>
+            <span class="font-semibold">{{ selectedReservation.usuario.nombre }}</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-gray-600">Habitación:</span>
+            <span class="font-semibold">{{ getRoomName(selectedReservation) }}</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-gray-600">Fechas:</span>
+            <span class="font-semibold">
+              {{ selectedReservation.fechaCheckin | date:'dd/MM' }} - 
+              {{ selectedReservation.fechaCheckout | date:'dd/MM/yyyy' }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Advertencia -->
+      <div class="bg-yellow-50 border-2 border-yellow-400 rounded-lg p-4 mb-4">
+        <div class="flex items-start">
+          <svg class="w-6 h-6 text-yellow-600 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+          </svg>
+          <div>
+            <p class="text-sm font-semibold text-yellow-800 mb-1">Atención</p>
+            <p class="text-xs text-yellow-700">
+              Esta acción no se puede deshacer. El huésped será notificado por email de la cancelación.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Campo de motivo -->
+      <div class="mb-4">
+        <label class="block text-sm font-bold mb-2 text-gray-700">
+          Motivo de cancelación <span class="text-gray-400 font-normal">(opcional)</span>
+        </label>
+        <textarea
+          [(ngModel)]="cancelReason"
+          rows="3"
+          placeholder="Ej: Problemas de mantenimiento, overbooking, etc."
+          class="w-full px-4 py-3 border-2 border-black rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 resize-none"
+          [disabled]="canceling"
+        ></textarea>
+        <p class="text-xs text-gray-500 mt-1">
+          Este motivo será visible para el huésped y ayudará a explicar la situación.
+        </p>
+      </div>
+
+    </div>
+
+    <!-- Footer con acciones -->
+    <div class="bg-gray-50 p-6 rounded-b-xl border-t-2 border-gray-200 flex justify-end space-x-3">
+      <button 
+        (click)="closeCancelModal()"
+        [disabled]="canceling"
+        class="px-6 py-3 border-2 border-black rounded-lg hover:bg-gray-100 font-semibold disabled:opacity-50">
+        Volver
+      </button>
+      
+      <button 
+        (click)="cancelarReserva(selectedReservation)"
+        [disabled]="canceling"
+        class="px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 font-semibold disabled:opacity-50 flex items-center">
+        <svg *ngIf="canceling" class="animate-spin h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        <span *ngIf="!canceling">Sí, cancelar reserva</span>
+        <span *ngIf="canceling">Cancelando...</span>
+      </button>
+    </div>
+
+  </div>
+</div>

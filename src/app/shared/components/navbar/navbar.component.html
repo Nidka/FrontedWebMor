@@ -1,0 +1,90 @@
+<nav class="bg-white sticky top-0 z-50 border-b border-gray-200">
+  <div class="max-w-7xl mx-auto px-6 sm:px-8 lg:px-10">
+    <div class="flex justify-between h-20">
+      <!-- Logo -->
+      <div class="flex items-center">
+        <a routerLink="/" class="flex items-center group cursor-pointer">
+          <div class="flex flex-col">
+            <span class="text-2xl font-light tracking-wide text-black">HOTEL</span>
+            <span class="text-xs text-gray-400 font-light tracking-widest">RESERVATIONS</span>
+          </div>
+        </a>
+      </div>
+
+      <!-- Desktop Navigation -->
+      <div class="hidden md:flex items-center space-x-12">
+        <a routerLink="/" routerLinkActive="text-black" [routerLinkActiveOptions]="{exact: true}" class="text-gray-500 hover:text-black font-light text-sm uppercase tracking-widest transition-colors border-b-2 border-transparent hover:border-black pb-1">
+          Inicio
+        </a>
+        <a routerLink="/hotels" routerLinkActive="text-black" class="text-gray-500 hover:text-black font-light text-sm uppercase tracking-widest transition-colors border-b-2 border-transparent hover:border-black pb-1">
+          Hoteles
+        </a>
+
+        <!-- User Menu -->
+        <div *ngIf="currentUser; else guestMenu" class="flex items-center space-x-10">
+          <a routerLink="/user/reservations" routerLinkActive="text-black" class="text-gray-500 hover:text-black font-light text-sm uppercase tracking-widest transition-colors">
+            Reservas
+          </a>
+          <button (click)="goToDashboard()" class="text-gray-500 hover:text-black font-light text-sm uppercase tracking-widest transition-colors">
+            {{ currentUser.nombre }}
+          </button>
+          <button (click)="logout()" class="text-gray-500 hover:text-black font-light text-sm uppercase tracking-widest transition-colors border-l border-gray-200 pl-10">
+            Salir
+          </button>
+        </div>
+
+        <ng-template #guestMenu>
+          <a routerLink="/auth/login" class="text-gray-500 hover:text-black font-light text-sm uppercase tracking-widest transition-colors">
+            Iniciar Sesión
+          </a>
+          <a routerLink="/auth/register" class="bg-black text-white px-10 py-3 font-light text-sm uppercase tracking-widest hover:bg-gray-800 transition-colors">
+            Registrarse
+          </a>
+        </ng-template>
+      </div>
+
+      <!-- Mobile menu button -->
+      <div class="md:hidden flex items-center">
+        <button (click)="toggleMenu()" class="text-amber-500 hover:text-amber-400 focus:outline-none">
+          <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+            <path *ngIf="!isMenuOpen" stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"></path>
+            <path *ngIf="isMenuOpen" stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mobile Navigation -->
+  <div *ngIf="isMenuOpen" class="md:hidden bg-black border-t-2 border-amber-500">
+    <div class="px-2 pt-2 pb-3 space-y-1">
+      <a routerLink="/" (click)="toggleMenu()" class="block px-3 py-2 rounded-md text-white hover:bg-gray-900 hover:text-amber-400 font-semibold">
+        Inicio
+      </a>
+      <a routerLink="/hotels" (click)="toggleMenu()" class="block px-3 py-2 rounded-md text-white hover:bg-gray-900 hover:text-amber-400 font-semibold">
+        Hoteles
+      </a>
+
+      <div *ngIf="currentUser; else mobileGuestMenu">
+        <a routerLink="/user/reservations" (click)="toggleMenu()" class="block px-3 py-2 rounded-md text-white hover:bg-gray-900 hover:text-amber-400 font-semibold">
+          Mis Reservas
+        </a>
+        <button (click)="goToDashboard(); toggleMenu()" class="w-full text-left px-3 py-2 rounded-md text-white hover:bg-gray-900 hover:text-amber-400 font-semibold">
+          Mi Cuenta
+        </button>
+        <button (click)="logout(); toggleMenu()" class="w-full text-left px-3 py-2 rounded-md text-red-400 hover:bg-red-900 font-semibold">
+          Cerrar Sesión
+        </button>
+      </div>
+
+      <ng-template #mobileGuestMenu>
+        <a routerLink="/auth/login" (click)="toggleMenu()" class="block px-3 py-2 rounded-md text-white hover:bg-gray-900 hover:text-amber-400 font-semibold">
+          Iniciar Sesión
+        </a>
+        <a routerLink="/auth/register" (click)="toggleMenu()" class="block px-3 py-2 rounded-md bg-gradient-to-r from-amber-500 to-yellow-600 text-black font-bold">
+          Registrarse
+        </a>
+      </ng-template>
+    </div>
+  </div>
+</nav>
